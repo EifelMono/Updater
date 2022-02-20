@@ -7,7 +7,7 @@
 
 ## Publish (create artifacts)
 
-run 
+run this first
 ```console
 dotnet cake
 ```
