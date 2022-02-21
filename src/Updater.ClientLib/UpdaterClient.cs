@@ -1,49 +1,71 @@
-﻿
-
-namespace Updater.ClientLib;
+﻿namespace Updater.ClientLib;
 
 public class UpdaterClient : IDisposable
 {
+    CancellationTokenSource CancellationTokenSource { get; set; } = null;
     public void Dispose()
     {
-        Stop();
+        CancellationTokenSource?.Cancel();
+        CancellationTokenSource = null;
     }
 
     public UpdaterClient Start()
     {
+        _ = RunAsync();
         return this;
     }
 
-
-    public void Stop()
+    internal async Task RunAsync()
     {
-
+        CancellationTokenSource = new CancellationTokenSource();
+        try
+        {
+            var udpServer = new UdpServer();
+            _ = udpServer.RunAsync(
+                (text) =>
+                {
+                    _onUpdaterAvailable?.Invoke(text);
+                },
+                CancellationTokenSource);
+            await Task.Delay(-1, CancellationTokenSource.Token);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex);
+        }
     }
 
-    protected Func<bool> _onNewUpdateAvailable;
 
-    public UpdaterClient OnNewUpdateAvailable(Func<bool> action)
+
+    #region OnUpdaterAvailable
+
+    protected Action<string> _onUpdaterAvailable;
+
+    public UpdaterClient OnUpdaterAvailable(Action<string> action)
     {
-        _onNewUpdateAvailable = action;
+        _onUpdaterAvailable = action;
         return this;
     }
 
-    protected void StartUpdate()
+    #endregion
+
+    #region OnNewUpdateAvailable
+    protected Func<bool> _onUpdateAvailable;
+
+    public UpdaterClient OnUpdateAvailable(Func<bool> action)
     {
-
-    }
-
-    protected Func<bool> _onStartUpdateQuery;
-
-
-    public UpdaterClient OnStartUpdateQuery(Func<bool> action)
-    {
-        _onStartUpdateQuery = action;
+        _onUpdateAvailable = action;
         return this;
     }
+    #endregion
 
-    protected void StartUpdateQueryResponse()
+    #region OnConfirmUpdate
+    protected Func<bool> _onConfirmUpdate;
+
+    public UpdaterClient OnConfirmUpdate(Func<bool> action)
     {
-
+        _onConfirmUpdate = action;
+        return this;
     }
+    #endregion
 }

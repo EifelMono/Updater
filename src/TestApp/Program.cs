@@ -20,14 +20,17 @@ internal sealed class TestAppCommand : Command<TestAppCommand.Settings>
         Console.Title = name;
         AnsiConsole.Write(new FigletText(name).LeftAligned().Color(Color.Orange1));
 
-
         AnsiConsole.WriteLine("\r\nUpdater started");
         using var updaterClient = new UpdaterClient()
-            .OnNewUpdateAvailable(() =>
+            .OnUpdaterAvailable((machineName) =>
+            {
+                AnsiConsole.WriteLine($"Updater available on machine {machineName}, {DateTime.Now}");
+            })
+            .OnUpdateAvailable(() =>
             {
                 return AnsiConsole.Confirm("Please confirm this Update.");
             })
-            .OnStartUpdateQuery(() =>
+            .OnConfirmUpdate(() =>
             {
                 return AnsiConsole.Confirm("Please confirm the current update now.");
             })

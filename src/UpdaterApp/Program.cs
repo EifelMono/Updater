@@ -4,12 +4,14 @@ AnsiConsole.Write(new FigletText(name).LeftAligned().Color(Color.Cyan1));
 
 using var updaterServer = new UpdaterServer();
 
+await updaterServer.NotifyUpdaterAvailableAsync();
 
 var exitCommand = "Exit";
 
 var selections = new Dictionary<string, Func<Task>>
 {
-    ["Notify new update available"] = async () => await updaterServer.NotifyUpdateAvailableAsync(),
+    ["Notify updater available"] = async () => await updaterServer.NotifyUpdaterAvailableAsync(),
+    ["Notify update available"] = async () => await updaterServer.NotifyUpdateAvailableAsync(),
     ["Start Update Query"] = async () => await updaterServer.StartUpdateQueryAsync(),
     ["Start Update"] = async () => await updaterServer.StartUpdateAsync(),
     [exitCommand] = () => Task.CompletedTask
