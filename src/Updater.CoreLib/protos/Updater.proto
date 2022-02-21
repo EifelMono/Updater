@@ -2,10 +2,10 @@ syntax = "proto3";
 
 option csharp_namespace = "Updater.CoreLib.grpc";
 
-package greet;
+package updater;
 
 // The greeting service definition.
-service Greeter {
+service Updater {
   // Sends a greeting
   rpc SayHello (HelloRequest) returns (HelloReply);
 }

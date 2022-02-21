@@ -130,7 +130,7 @@ public class UpdaterClient : IDisposable,
     {
         Channel channel = new Channel($"127.0.0.1:{Globals.grpcPort}", ChannelCredentials.Insecure);
 
-        var client = new Greeter.GreeterClient(channel);
+        var client = new CoreLib.grpc.Updater.UpdaterClient(channel);
         var reply = client.SayHello(new HelloRequest { Name = Name });
         Console.WriteLine(reply);
         return Task.CompletedTask;

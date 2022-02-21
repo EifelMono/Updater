@@ -5,9 +5,8 @@ using Updater.CoreLib.udp;
 
 namespace Updater.ServerLib;
 
-class GreeterImpl : Greeter.GreeterBase
+class UpdaterImpl : CoreLib.grpc.Updater.UpdaterBase
 {
-    // Server side handler of the SayHello RPC
     public override Task<HelloReply> SayHello(HelloRequest request, ServerCallContext context)
     {
         Console.WriteLine(request);
@@ -24,7 +23,7 @@ public class UpdaterServer : IDisposable
         CancellationTokenSource = new CancellationTokenSource();
         GrpcServer = new Grpc.Core.Server()
         {
-            Services = { Greeter.BindService(new GreeterImpl()) },
+            Services = { CoreLib.grpc.Updater.BindService(new UpdaterImpl()) },
             Ports = { new ServerPort("0.0.0.0", Globals.grpcPort, ServerCredentials.Insecure) }
         };
         GrpcServer.Start();
@@ -32,7 +31,7 @@ public class UpdaterServer : IDisposable
     public async void Dispose()
     {
         CancellationTokenSource?.Cancel();
-        await GrpcServer.ShutdownAsync();
+        await GrpcServer?.ShutdownAsync();
     }
 
     public async Task NotifyUpdaterAvailableAsync()
