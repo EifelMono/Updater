@@ -1,6 +1,22 @@
 ﻿namespace Updater.ClientLib;
 
-public class UpdaterClient : IDisposable
+public interface IUpdaterClientUpdate
+{
+    Task UpdateStartAsync();
+}
+public interface IUpdaterClientShutdown
+{
+    Task ShutdownDeniedAsync();
+    Task ShutdownAllowedAsync(TimeSpan timeSpan);
+}
+
+public interface IUpdaterClientInventory
+{
+    Task InventoryAsync(List<Inventory> inventories);
+}
+
+public class IUpdaterClientConfirmShutdown : IDisposable,
+    IUpdaterClientUpdate, IUpdaterClientShutdown, IUpdaterClientInventory
 {
     CancellationTokenSource CancellationTokenSource { get; set; } = null;
     public void Dispose()
@@ -9,7 +25,7 @@ public class UpdaterClient : IDisposable
         CancellationTokenSource = null;
     }
 
-    public UpdaterClient Start()
+    public IUpdaterClientConfirmShutdown Start()
     {
         _ = RunAsync();
         return this;
@@ -35,13 +51,11 @@ public class UpdaterClient : IDisposable
         }
     }
 
-
-
     #region OnUpdaterAvailable
 
     protected Action<string> _onUpdaterAvailable;
 
-    public UpdaterClient OnUpdaterAvailable(Action<string> action)
+    public IUpdaterClientConfirmShutdown OnUpdaterAvailable(Action<string> action)
     {
         _onUpdaterAvailable = action;
         return this;
@@ -49,23 +63,52 @@ public class UpdaterClient : IDisposable
 
     #endregion
 
-    #region OnNewUpdateAvailable
-    protected Func<bool> _onUpdateAvailable;
+    #region OnUpdateAvailable
+    protected Action<IUpdaterClientConfirmShutdown> _onUpdateAvailable;
 
-    public UpdaterClient OnUpdateAvailable(Func<bool> action)
+    public IUpdaterClientConfirmShutdown OnUpdateAvailable(Action<IUpdaterClientUpdate> action)
     {
         _onUpdateAvailable = action;
         return this;
     }
+
+    public Task UpdateStartAsync()
+    {
+        return Task.CompletedTask;
+    }
     #endregion
 
-    #region OnConfirmUpdate
-    protected Func<bool> _onConfirmUpdate;
+    #region OnConfirmShutdown
+    protected Action<IUpdaterClientConfirmShutdown> _onConfirmShutdown;
 
-    public UpdaterClient OnConfirmUpdate(Func<bool> action)
+    public IUpdaterClientConfirmShutdown OnConfirmShutdown(Action<IUpdaterClientShutdown> action)
     {
-        _onConfirmUpdate = action;
+        _onConfirmShutdown = action;
         return this;
+    }
+
+    public Task ShutdownDeniedAsync()
+    {
+        return Task.CompletedTask;
+    }
+    public Task ShutdownAllowedAsync(TimeSpan timeSpan)
+    {
+        return Task.CompletedTask;
+    }
+    #endregion
+
+    #region OnInventory
+    protected Action<IUpdaterClientInventory> _onInventory;
+
+    public IUpdaterClientConfirmShutdown OnInventory(Action<IUpdaterClientInventory> action)
+    {
+        _onInventory = action;
+        return this;
+    }
+
+    public Task InventoryAsync(List<Inventory> inventories)
+    {
+        return Task.CompletedTask;
     }
     #endregion
 }

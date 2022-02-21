@@ -17,6 +17,14 @@ public class UpdaterServer : IDisposable
     {
         return Task.CompletedTask;
     }
+
+    protected Action _onStartUpdate { get; set; }
+    public UpdaterServer OnStartUpdate(Action action)
+    {
+        _onStartUpdate = action;
+        return this;
+    }
+
     public Task StartUpdateQueryAsync()
     {
         return Task.CompletedTask;

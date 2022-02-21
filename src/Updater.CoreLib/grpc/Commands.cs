@@ -2,7 +2,11 @@
 
 public enum Commands
 {
+    UpdaterAvailble,
+
     Inventory,
+
     UpdateAvailable,
-    ConfirmUpdate,
+    ConfirmShutdown,
+    Shutdown
 }
