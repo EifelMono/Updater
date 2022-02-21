@@ -23,6 +23,7 @@ internal sealed class TestAppCommand : AsyncCommand<TestAppCommand.Settings>
         AnsiConsole.Write(new FigletText(name).LeftAligned().Color(Color.Orange1));
 
         AnsiConsole.WriteLine("\r\nUpdater started");
+
         using var updaterClient = new UpdaterClient(name)
             .OnUpdaterAvailable((machineName) =>
             {
@@ -59,7 +60,6 @@ internal sealed class TestAppCommand : AsyncCommand<TestAppCommand.Settings>
             .Start();
 
         AnsiConsole.WriteLine("App is Running...");
-
 
         Console.ReadLine();
 
