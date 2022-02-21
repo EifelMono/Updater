@@ -4,16 +4,18 @@ AnsiConsole.Write(new FigletText(name).LeftAligned().Color(Color.Cyan1));
 
 using var updaterServer = new UpdaterServer();
 
-await updaterServer.NotifyUpdaterAvailableAsync();
+await updaterServer.BroadcastUpdaterAvailableAsync();
 
 var exitCommand = "Exit";
 
 var selections = new Dictionary<string, Func<Task>>
 {
-    ["Notify updater available"] = async () => await updaterServer.NotifyUpdaterAvailableAsync(),
-    ["Notify update available"] = async () => await updaterServer.NotifyUpdateAvailableAsync(),
-    ["Start Update Query"] = async () => await updaterServer.StartUpdateQueryAsync(),
-    ["Start Update"] = async () => await updaterServer.StartUpdateAsync(),
+    ["Grpc reconnect"] = async () => await updaterServer.BroadcastGrpcReconnectAsync(),
+    ["Updater available"] = async () => await updaterServer.BroadcastUpdaterAvailableAsync(),
+    ["Inventory"] = async () => await updaterServer.BroadcastInventoryAsync(),
+    ["Update available"] = async () => await updaterServer.BroadcastUpdateAvailableAsync(),
+    ["Confirme Update "] = async () => await updaterServer.BroadcastConfirmUpdateAsync(),
+    ["Start Update"] = async () => await updaterServer.BroadcastStartUpdateAsync(),
     [exitCommand] = () => Task.CompletedTask
 };
 

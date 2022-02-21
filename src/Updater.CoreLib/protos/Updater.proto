@@ -4,18 +4,20 @@ option csharp_namespace = "Updater.CoreLib.grpc";
 
 package updater;
 
-// The greeting service definition.
 service Updater {
-  // Sends a greeting
-  rpc SayHello (HelloRequest) returns (HelloReply);
+  rpc SendInventory (InventoryRequest) returns (InventoryReply);
 }
 
-// The request message containing the user's name.
-message HelloRequest {
-  string name = 1;
+message InventoryRequest {
+  repeated  InventoryPacket packet = 1;
 }
 
-// The response message containing the greetings.
-message HelloReply {
-  string message = 1;
+message InventoryPacket {
+    string Path = 1;
+    string Type= 2;
+    string Version= 3;
+    string Serialnumber= 4;
+}
+
+message InventoryReply {
 }

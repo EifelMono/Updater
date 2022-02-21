@@ -7,19 +7,18 @@ public interface IUpdaterClientUpdate
 {
     Task UpdateStartAsync();
 }
-public interface IUpdaterClientShutdown
+public interface IUpdaterClientConfirmUpdate
 {
-    Task ShutdownDeniedAsync();
-    Task ShutdownAllowedAsync(TimeSpan timeSpan);
+    Task UpdateAllowedAsync(bool allowed, TimeSpan timeSpan);
 }
 
 public interface IUpdaterClientInventory
 {
-    Task InventoryAsync(List<Inventory> inventories);
+    Task InventoryAsync(List<Updater.CoreLib.grpc.InventoryPacket> inventories);
 }
 
 public class UpdaterClient : IDisposable,
-    IUpdaterClientUpdate, IUpdaterClientShutdown, IUpdaterClientInventory
+    IUpdaterClientUpdate, IUpdaterClientConfirmUpdate, IUpdaterClientInventory
 {
 
     private string Name { get; set; }
@@ -28,6 +27,7 @@ public class UpdaterClient : IDisposable,
         Name = name;
     }
 
+    CoreLib.grpc.Updater.UpdaterClient GrpcUpdaterClient { get; set; } = null;
     CancellationTokenSource CancellationTokenSource { get; set; } = null;
     public void Dispose()
     {
@@ -50,11 +50,37 @@ public class UpdaterClient : IDisposable,
             {
                 var udpServer = new UdpServer();
                 _ = udpServer.RunAsync(
-                    (text) =>
+                    (message) =>
                     {
-                        _onUpdaterAvailable?.Invoke(text);
+                        var broadcastMessage = message.FromJson<BroadcastMessage>();
+                        if (broadcastMessage is null)
+                            return;
+                        if (broadcastMessage.MachineName != Environment.MachineName)
+                            return;
+                        if (GrpcUpdaterClient is null || broadcastMessage.Command == Command.GrpcReconnect)
+                        {
+                            Channel channel = new Channel($"127.0.0.1:{Globals.grpcPort}", ChannelCredentials.Insecure);
+                            GrpcUpdaterClient = new CoreLib.grpc.Updater.UpdaterClient(channel);
+                        }
+                        switch (broadcastMessage.Command)
+                        {
+
+                            case Command.UpdaterAvailable:
+                                _onUpdaterAvailable?.Invoke(broadcastMessage);
+                                break;
+                            case Command.Inventory:
+                                _onInventory?.Invoke(this);
+                                break;
+                            case Command.UpdateAvailable:
+                                _onUpdateAvailable?.Invoke(this);
+                                break;
+                            case Command.ConfirmUpdate:
+                                _onConfirmUpdate.Invoke(this);
+                                break;
+
+                        }
                     },
-                    CancellationTokenSource);
+                        CancellationTokenSource);
                 await Task.Delay(-1, CancellationTokenSource.Token);
             }
             catch (Exception ex)
@@ -66,9 +92,9 @@ public class UpdaterClient : IDisposable,
 
     #region OnUpdaterAvailable
 
-    protected Action<string> _onUpdaterAvailable;
+    protected Action<BroadcastMessage> _onUpdaterAvailable;
 
-    public UpdaterClient OnUpdaterAvailable(Action<string> action)
+    public UpdaterClient OnUpdaterAvailable(Action<BroadcastMessage> action)
     {
         _onUpdaterAvailable = action;
         return this;
@@ -77,7 +103,7 @@ public class UpdaterClient : IDisposable,
     #endregion
 
     #region OnUpdateAvailable
-    protected Action<UpdaterClient> _onUpdateAvailable;
+    protected Action<IUpdaterClientUpdate> _onUpdateAvailable;
 
     public UpdaterClient OnUpdateAvailable(Action<IUpdaterClientUpdate> action)
     {
@@ -92,19 +118,15 @@ public class UpdaterClient : IDisposable,
     #endregion
 
     #region OnConfirmShutdown
-    protected Action<UpdaterClient> _onConfirmShutdown;
+    protected Action<IUpdaterClientConfirmUpdate> _onConfirmUpdate;
 
-    public UpdaterClient OnConfirmShutdown(Action<IUpdaterClientShutdown> action)
+    public UpdaterClient OnConfirmUpdate(Action<IUpdaterClientConfirmUpdate> action)
     {
-        _onConfirmShutdown = action;
+        _onConfirmUpdate = action;
         return this;
     }
 
-    public Task ShutdownDeniedAsync()
-    {
-        return Task.CompletedTask;
-    }
-    public Task ShutdownAllowedAsync(TimeSpan timeSpan)
+    public Task UpdateAllowedAsync(bool allowed, TimeSpan timeSpan)
     {
         return Task.CompletedTask;
     }
@@ -119,20 +141,14 @@ public class UpdaterClient : IDisposable,
         return this;
     }
 
-    public Task InventoryAsync(List<Inventory> inventories)
+    public async Task InventoryAsync(List<Updater.CoreLib.grpc.InventoryPacket> inventories)
     {
-        return Task.CompletedTask;
+        if (GrpcUpdaterClient is { })
+        {
+            var request = new InventoryRequest();
+            request.Packet.AddRange(inventories);
+            _ = await GrpcUpdaterClient.SendInventoryAsync(request);
+        }
     }
     #endregion
-
-
-    public Task SayHelloAsync()
-    {
-        Channel channel = new Channel($"127.0.0.1:{Globals.grpcPort}", ChannelCredentials.Insecure);
-
-        var client = new CoreLib.grpc.Updater.UpdaterClient(channel);
-        var reply = client.SayHello(new HelloRequest { Name = Name });
-        Console.WriteLine(reply);
-        return Task.CompletedTask;
-    }
 }

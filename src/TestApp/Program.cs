@@ -33,19 +33,27 @@ internal sealed class TestAppCommand : AsyncCommand<TestAppCommand.Settings>
                 if (AnsiConsole.Confirm("Start Update?"))
                     await client.UpdateStartAsync();
             })
-            .OnConfirmShutdown(async (client) =>
+            .OnConfirmUpdate(async (client) =>
             {
-                if (AnsiConsole.Confirm("Shutdown for Update?"))
-                    await client.ShutdownAllowedAsync(TimeSpan.FromSeconds(5));
-                else
-                    await client.ShutdownDeniedAsync();
+                await client.UpdateAllowedAsync(AnsiConsole.Confirm("Confirm Update?"), TimeSpan.FromSeconds(5));
             })
             .OnInventory(async (client) =>
             {
-                await client.InventoryAsync(new List<Updater.CoreLib.grpc.Inventory>
+                await client.InventoryAsync(new List<Updater.CoreLib.grpc.InventoryPacket>
                 {
-                    new Inventory($"{name}.a.b.c", "Plc", "Plc.1234", "4711.1"),
-                    new Inventory($"{name}.e.f.g", "ImageProcessing", "Imag.1234", "4711.2"),
+                    new Updater.CoreLib.grpc.InventoryPacket
+                    {
+                        Path=$"{name}.a.b.c",
+                        Type= "Plc",
+                        Version="Plc.1234",
+                        Serialnumber= "4711.1"},
+                    new Updater.CoreLib.grpc.InventoryPacket
+                    {
+                        Path=$"{name}.e.f.g",
+                        Type= "ImageProcessing",
+                        Version="ImageProcessing.1234",
+                        Serialnumber= "4711.2"},
+
                 });
             })
             .Start();
@@ -53,26 +61,6 @@ internal sealed class TestAppCommand : AsyncCommand<TestAppCommand.Settings>
         AnsiConsole.WriteLine("App is Running...");
 
 
-        var exitCommand = "Exit";
-
-        var selections = new Dictionary<string, Func<Task>>
-        {
-            ["Start Update"] = async () => await updaterClient.SayHelloAsync(),
-            [exitCommand] = () => Task.CompletedTask
-        };
-
-        var run = true;
-        while (run)
-        {
-            var select = AnsiConsole.Prompt(
-                          new SelectionPrompt<string>()
-                              .Title($"\r\n[cyan1]Select you action[/]")
-                              .HighlightStyle(new Style(Color.Cyan1))
-                              .PageSize(12)
-                              .AddChoices(selections.Keys));
-            run = select != exitCommand;
-            await selections[select].Invoke();
-        }
         Console.ReadLine();
 
         return 0;

@@ -17,4 +17,9 @@
     <PackageReference Include="Grpc.Tools" Version="2.44.0" PrivateAssets="All" />
   </ItemGroup>
 
+
+  <ItemGroup>
+    <Folder Include="grpc\" />
+  </ItemGroup>
+
 </Project>

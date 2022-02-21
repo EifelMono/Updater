@@ -7,10 +7,18 @@ namespace Updater.ServerLib;
 
 class UpdaterImpl : CoreLib.grpc.Updater.UpdaterBase
 {
-    public override Task<HelloReply> SayHello(HelloRequest request, ServerCallContext context)
+    private UpdaterServer UpdaterServer { get; set; }
+    public UpdaterImpl(UpdaterServer updaterServer)
     {
-        Console.WriteLine(request);
-        return Task.FromResult(new HelloReply { Message = "Hello " + request.Name });
+        UpdaterServer = updaterServer;
+    }
+
+    public override Task<InventoryReply> SendInventory(InventoryRequest request, ServerCallContext context)
+    {
+        Console.WriteLine();
+        foreach (var inventory in request.Packet)
+            Console.WriteLine($"{inventory.Path} {inventory.Type} {inventory.Version} {inventory.Serialnumber}");
+        return Task.FromResult(new InventoryReply { });
     }
 }
 
@@ -23,7 +31,7 @@ public class UpdaterServer : IDisposable
         CancellationTokenSource = new CancellationTokenSource();
         GrpcServer = new Grpc.Core.Server()
         {
-            Services = { CoreLib.grpc.Updater.BindService(new UpdaterImpl()) },
+            Services = { CoreLib.grpc.Updater.BindService(new UpdaterImpl(this)) },
             Ports = { new ServerPort("0.0.0.0", Globals.grpcPort, ServerCredentials.Insecure) }
         };
         GrpcServer.Start();
@@ -34,32 +42,47 @@ public class UpdaterServer : IDisposable
         await GrpcServer?.ShutdownAsync();
     }
 
-    public async Task NotifyUpdaterAvailableAsync()
+    public async Task BroadcastGrpcReconnectAsync()
     {
-        await new CoreLib.udp.UdpClient().SendAsync(Environment.MachineName);
+        await new CoreLib.udp.UdpClient().SendBroadcastMessageAsync(
+            new BroadcastMessage { MachineName = Environment.MachineName, Command = Command.GrpcReconnect });
     }
 
-    public Task NotifyUpdateAvailableAsync()
+    public async Task BroadcastUpdaterAvailableAsync()
     {
-        return Task.CompletedTask;
+        await new CoreLib.udp.UdpClient().SendBroadcastMessageAsync(
+            new BroadcastMessage { MachineName = Environment.MachineName, Command = Command.UpdaterAvailable });
+    }
+    public async Task BroadcastInventoryAsync()
+    {
+        await new CoreLib.udp.UdpClient().SendBroadcastMessageAsync(
+            new BroadcastMessage { MachineName = Environment.MachineName, Command = Command.Inventory });
     }
 
-    protected Action _onStartUpdate { get; set; }
-    public UpdaterServer OnStartUpdate(Action action)
+
+    public async Task BroadcastUpdateAvailableAsync()
     {
-        _onStartUpdate = action;
+        await new CoreLib.udp.UdpClient().SendBroadcastMessageAsync(
+            new BroadcastMessage { MachineName = Environment.MachineName, Command = Command.UpdateAvailable });
+    }
+    public async Task BroadcastConfirmUpdateAsync()
+    {
+        await new CoreLib.udp.UdpClient().SendBroadcastMessageAsync(
+            new BroadcastMessage { MachineName = Environment.MachineName, Command = Command.ConfirmUpdate });
+    }
+
+    public async Task BroadcastStartUpdateAsync()
+    {
+        await new CoreLib.udp.UdpClient().SendBroadcastMessageAsync(
+            new BroadcastMessage { MachineName = Environment.MachineName, Command = Command.StartUpdate });
+    }
+
+    protected Action _onConfirmeUpdate { get; set; }
+    public UpdaterServer OnConfirmUpdate(Action action)
+    {
+        _onConfirmeUpdate = action;
         return this;
     }
 
-    public Task StartUpdateQueryAsync()
-    {
-        return Task.CompletedTask;
-
-    }
-    public Task StartUpdateAsync()
-    {
-
-        return Task.CompletedTask;
-    }
 
 }
