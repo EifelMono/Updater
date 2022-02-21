@@ -4,7 +4,7 @@ var app = new CommandApp<TestAppCommand>();
 return app.Run(args);
 
 
-internal sealed class TestAppCommand : Command<TestAppCommand.Settings>
+internal sealed class TestAppCommand : AsyncCommand<TestAppCommand.Settings>
 {
     public sealed class Settings : CommandSettings
     {
@@ -13,7 +13,7 @@ internal sealed class TestAppCommand : Command<TestAppCommand.Settings>
         public string? Name { get; init; }
     }
 
-    public override int Execute([NotNull] CommandContext context, [NotNull] Settings settings)
+    public async override Task<int> ExecuteAsync([NotNull] CommandContext context, [NotNull] Settings settings)
     {
 
         var name = settings.Name;
@@ -23,7 +23,7 @@ internal sealed class TestAppCommand : Command<TestAppCommand.Settings>
         AnsiConsole.Write(new FigletText(name).LeftAligned().Color(Color.Orange1));
 
         AnsiConsole.WriteLine("\r\nUpdater started");
-        using var updaterClient = new IUpdaterClientConfirmShutdown()
+        using var updaterClient = new UpdaterClient(name)
             .OnUpdaterAvailable((machineName) =>
             {
                 AnsiConsole.WriteLine($"Updater available on machine {machineName}, {DateTime.Now}");
@@ -50,8 +50,29 @@ internal sealed class TestAppCommand : Command<TestAppCommand.Settings>
             })
             .Start();
 
-
         AnsiConsole.WriteLine("App is Running...");
+
+
+        var exitCommand = "Exit";
+
+        var selections = new Dictionary<string, Func<Task>>
+        {
+            ["Start Update"] = async () => await updaterClient.SayHelloAsync(),
+            [exitCommand] = () => Task.CompletedTask
+        };
+
+        var run = true;
+        while (run)
+        {
+            var select = AnsiConsole.Prompt(
+                          new SelectionPrompt<string>()
+                              .Title($"\r\n[cyan1]Select you action[/]")
+                              .HighlightStyle(new Style(Color.Cyan1))
+                              .PageSize(12)
+                              .AddChoices(selections.Keys));
+            run = select != exitCommand;
+            await selections[select].Invoke();
+        }
         Console.ReadLine();
 
         return 0;

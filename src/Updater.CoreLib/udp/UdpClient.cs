@@ -7,7 +7,7 @@ public class UdpClient : UdpCore
         try
         {
             using var _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            _socket.Connect(IPAddress.Broadcast, Port);
+            _socket.Connect(IPAddress.Broadcast, Globals.UDPPort);
             State state = new State();
             EndPoint epFrom = new IPEndPoint(IPAddress.Any, 0);
 

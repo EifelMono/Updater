@@ -2,8 +2,6 @@
 
 public class UdpCore
 {
-    public static int Port => 10001;
-
     internal class State
     {
         internal static int bufSize = 8 * 1024;

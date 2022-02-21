@@ -1,4 +1,7 @@
-﻿namespace Updater.ClientLib;
+﻿using Grpc.Core;
+using Updater.CoreLib;
+
+namespace Updater.ClientLib;
 
 public interface IUpdaterClientUpdate
 {
@@ -15,9 +18,16 @@ public interface IUpdaterClientInventory
     Task InventoryAsync(List<Inventory> inventories);
 }
 
-public class IUpdaterClientConfirmShutdown : IDisposable,
+public class UpdaterClient : IDisposable,
     IUpdaterClientUpdate, IUpdaterClientShutdown, IUpdaterClientInventory
 {
+
+    private string Name { get; set; }
+    public UpdaterClient(string name)
+    {
+        Name = name;
+    }
+
     CancellationTokenSource CancellationTokenSource { get; set; } = null;
     public void Dispose()
     {
@@ -25,37 +35,40 @@ public class IUpdaterClientConfirmShutdown : IDisposable,
         CancellationTokenSource = null;
     }
 
-    public IUpdaterClientConfirmShutdown Start()
+    public UpdaterClient Start()
     {
         _ = RunAsync();
         return this;
     }
 
-    internal async Task RunAsync()
+    internal Task RunAsync()
     {
-        CancellationTokenSource = new CancellationTokenSource();
-        try
+        return Task.Run(async () =>
         {
-            var udpServer = new UdpServer();
-            _ = udpServer.RunAsync(
-                (text) =>
-                {
-                    _onUpdaterAvailable?.Invoke(text);
-                },
-                CancellationTokenSource);
-            await Task.Delay(-1, CancellationTokenSource.Token);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine(ex);
-        }
+            CancellationTokenSource = new CancellationTokenSource();
+            try
+            {
+                var udpServer = new UdpServer();
+                _ = udpServer.RunAsync(
+                    (text) =>
+                    {
+                        _onUpdaterAvailable?.Invoke(text);
+                    },
+                    CancellationTokenSource);
+                await Task.Delay(-1, CancellationTokenSource.Token);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
+        });
     }
 
     #region OnUpdaterAvailable
 
     protected Action<string> _onUpdaterAvailable;
 
-    public IUpdaterClientConfirmShutdown OnUpdaterAvailable(Action<string> action)
+    public UpdaterClient OnUpdaterAvailable(Action<string> action)
     {
         _onUpdaterAvailable = action;
         return this;
@@ -64,9 +77,9 @@ public class IUpdaterClientConfirmShutdown : IDisposable,
     #endregion
 
     #region OnUpdateAvailable
-    protected Action<IUpdaterClientConfirmShutdown> _onUpdateAvailable;
+    protected Action<UpdaterClient> _onUpdateAvailable;
 
-    public IUpdaterClientConfirmShutdown OnUpdateAvailable(Action<IUpdaterClientUpdate> action)
+    public UpdaterClient OnUpdateAvailable(Action<IUpdaterClientUpdate> action)
     {
         _onUpdateAvailable = action;
         return this;
@@ -79,9 +92,9 @@ public class IUpdaterClientConfirmShutdown : IDisposable,
     #endregion
 
     #region OnConfirmShutdown
-    protected Action<IUpdaterClientConfirmShutdown> _onConfirmShutdown;
+    protected Action<UpdaterClient> _onConfirmShutdown;
 
-    public IUpdaterClientConfirmShutdown OnConfirmShutdown(Action<IUpdaterClientShutdown> action)
+    public UpdaterClient OnConfirmShutdown(Action<IUpdaterClientShutdown> action)
     {
         _onConfirmShutdown = action;
         return this;
@@ -100,7 +113,7 @@ public class IUpdaterClientConfirmShutdown : IDisposable,
     #region OnInventory
     protected Action<IUpdaterClientInventory> _onInventory;
 
-    public IUpdaterClientConfirmShutdown OnInventory(Action<IUpdaterClientInventory> action)
+    public UpdaterClient OnInventory(Action<IUpdaterClientInventory> action)
     {
         _onInventory = action;
         return this;
@@ -111,4 +124,15 @@ public class IUpdaterClientConfirmShutdown : IDisposable,
         return Task.CompletedTask;
     }
     #endregion
+
+
+    public Task SayHelloAsync()
+    {
+        Channel channel = new Channel($"127.0.0.1:{Globals.grpcPort}", ChannelCredentials.Insecure);
+
+        var client = new Greeter.GreeterClient(channel);
+        var reply = client.SayHello(new HelloRequest { Name = Name });
+        Console.WriteLine(reply);
+        return Task.CompletedTask;
+    }
 }

@@ -15,7 +15,7 @@ public class UdpServer : UdpCore, IDisposable
         {
             using var _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             _socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            _socket.Bind(new IPEndPoint(IPAddress.Any, UdpCore.Port));
+            _socket.Bind(new IPEndPoint(IPAddress.Any, Globals.UDPPort));
 
             while (!cancellationTokenSource.Token.IsCancellationRequested)
             {
