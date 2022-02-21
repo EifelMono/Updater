@@ -77,6 +77,9 @@ public class UpdaterClient : IDisposable,
                             case Command.ConfirmUpdate:
                                 _onConfirmUpdate.Invoke(this);
                                 break;
+                            case Command.StartUpdate:
+                                Environment.Exit(0);
+                                break;
 
                         }
                     },
@@ -90,7 +93,6 @@ public class UpdaterClient : IDisposable,
         });
     }
 
-    #region OnUpdaterAvailable
 
     protected Action<BroadcastMessage> _onUpdaterAvailable;
 
@@ -100,9 +102,7 @@ public class UpdaterClient : IDisposable,
         return this;
     }
 
-    #endregion
 
-    #region OnUpdateAvailable
     protected Action<IUpdaterClientUpdate> _onUpdateAvailable;
 
     public UpdaterClient OnUpdateAvailable(Action<IUpdaterClientUpdate> action)
@@ -115,9 +115,7 @@ public class UpdaterClient : IDisposable,
     {
         return Task.CompletedTask;
     }
-    #endregion
 
-    #region OnConfirmShutdown
     protected Action<IUpdaterClientConfirmUpdate> _onConfirmUpdate;
 
     public UpdaterClient OnConfirmUpdate(Action<IUpdaterClientConfirmUpdate> action)
@@ -130,9 +128,7 @@ public class UpdaterClient : IDisposable,
     {
         return Task.CompletedTask;
     }
-    #endregion
 
-    #region OnInventory
     protected Action<IUpdaterClientInventory> _onInventory;
 
     public UpdaterClient OnInventory(Action<IUpdaterClientInventory> action)
@@ -150,5 +146,4 @@ public class UpdaterClient : IDisposable,
             _ = await GrpcUpdaterClient.SendInventoryAsync(request);
         }
     }
-    #endregion
 }
