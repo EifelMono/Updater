@@ -10,12 +10,13 @@ public class UdpServer : UdpCore, IDisposable
 
     public Task RunAsync(Action<string> action, CancellationTokenSource cancellationTokenSource)
     {
+        CancellationTokenSource = cancellationTokenSource;
         try
         {
-            var _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            using var _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             _socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             _socket.Bind(new IPEndPoint(IPAddress.Any, UdpCore.Port));
-          
+
             while (!cancellationTokenSource.Token.IsCancellationRequested)
             {
                 State state = new State();
@@ -31,7 +32,10 @@ public class UdpServer : UdpCore, IDisposable
                 }, state);
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.ToString());
+        }
         return Task.CompletedTask;
     }
 }
