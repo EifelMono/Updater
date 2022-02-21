@@ -12,7 +12,7 @@ var selections = new Dictionary<string, Func<Task>>
 {
     ["Grpc reconnect"] = async () => await updaterServer.BroadcastGrpcReconnectAsync(),
     ["Updater available"] = async () => await updaterServer.BroadcastUpdaterAvailableAsync(),
-    ["Inventory"] = async () => await updaterServer.BroadcastInventoryAsync(),
+    ["Inventory"] = async () => await updaterServer.BroadcastInventoryAsync(TimeSpan.FromSeconds(2)),
     ["Update available"] = async () => await updaterServer.BroadcastUpdateAvailableAsync(),
     ["Confirme Update "] = async () => await updaterServer.BroadcastConfirmUpdateAsync(),
     ["Start Update"] = async () => await updaterServer.BroadcastStartUpdateAsync(),

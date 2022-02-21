@@ -53,10 +53,11 @@ public class UpdaterServer : IDisposable
         await new CoreLib.udp.UdpClient().SendBroadcastMessageAsync(
             new BroadcastMessage { MachineName = Environment.MachineName, Command = Command.UpdaterAvailable });
     }
-    public async Task BroadcastInventoryAsync()
+    public async Task BroadcastInventoryAsync(TimeSpan timeSpan)
     {
         await new CoreLib.udp.UdpClient().SendBroadcastMessageAsync(
             new BroadcastMessage { MachineName = Environment.MachineName, Command = Command.Inventory });
+        await Task.Delay(timeSpan);
     }
 
 
