@@ -18,19 +18,11 @@ public class UdpServer : UdpCore, IDisposable
             _socket.Bind(new IPEndPoint(IPAddress.Any, Globals.UDPPort));
 
             State state = new State();
-            EndPoint epFrom = new IPEndPoint(IPAddress.Any, 0);
-            AsyncCallback recv = null;
             while (!cancellationTokenSource.Token.IsCancellationRequested)
             {
-                _socket.BeginReceiveFrom(state.buffer, 0, State.bufSize, SocketFlags.None, ref epFrom, recv = (ar) =>
-                {
-                    State so = (State)ar.AsyncState;
-                    int bytes = _socket.EndReceiveFrom(ar, ref epFrom);
-                    _socket.BeginReceiveFrom(so.buffer, 0, State.bufSize, SocketFlags.None, ref epFrom, recv, so);
-                    var text = Encoding.ASCII.GetString(so.buffer, 0, bytes);
-                    action?.Invoke(text);
-                }, state);
-                await Task.Delay(10);
+                var bytes = await _socket.ReceiveAsync(state.buffer, SocketFlags.None, cancellationTokenSource.Token);
+                var text = Encoding.ASCII.GetString(state.buffer, 0, bytes);
+                action?.Invoke(text);
             }
         }
         catch (Exception ex)
