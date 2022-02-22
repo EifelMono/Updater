@@ -64,6 +64,7 @@ DotNetPublishSettings AppsSettings(string realArtifacts)
 
 Task("KillApps")
 .Does(() => {
+   Information("Ingore this error messages");
    KillUpdaterApp();
    Console.WriteLine();
    KillTestApp();
