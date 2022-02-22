@@ -13,9 +13,9 @@ internal sealed class TestAppCommand : AsyncCommand<TestAppCommand.Settings>
         public string? Name { get; init; }
     }
 
-    public async override Task<int> ExecuteAsync([NotNull] CommandContext context, [NotNull] Settings settings)
+    public override Task<int> ExecuteAsync([NotNull] CommandContext context, [NotNull] Settings settings)
     {
-
+        #region TestApp PreFix
         var name = settings.Name;
         if (string.IsNullOrEmpty(name))
             name = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
@@ -23,6 +23,7 @@ internal sealed class TestAppCommand : AsyncCommand<TestAppCommand.Settings>
         AnsiConsole.Write(new FigletText(name).LeftAligned().Color(Color.Orange1));
 
         AnsiConsole.WriteLine("\r\nUpdater started");
+        #endregion
 
         using var updaterClient = new UpdaterClient(name)
             .OnUpdaterAvailable((machineName) =>
@@ -42,27 +43,18 @@ internal sealed class TestAppCommand : AsyncCommand<TestAppCommand.Settings>
             {
                 await client.InventoryAsync(new List<Updater.CoreLib.grpc.InventoryPacket>
                 {
-                    new Updater.CoreLib.grpc.InventoryPacket
-                    {
-                        Path=$"{name}.a.b.c",
-                        Type= "Plc",
-                        Version="Plc.1234",
-                        Serialnumber= "4711.1"},
-                    new Updater.CoreLib.grpc.InventoryPacket
-                    {
-                        Path=$"{name}.e.f.g",
-                        Type= "ImageProcessing",
-                        Version="ImageProcessing.1234",
-                        Serialnumber= "4711.2"},
-
+                    new Updater.CoreLib.grpc.InventoryPacket { Path=$"{name}.a.b.c", Type= "Plc", Version="Plc.1234", Serialnumber= "4711.1"},
+                    new Updater.CoreLib.grpc.InventoryPacket { Path=$"{name}.e.f.g", Type= "ImageProcessing", Version="ImageProcessing.1234", Serialnumber= "4711.2"},
                 });
             })
             .Start();
 
+        #region TestApp PostFix
         AnsiConsole.WriteLine("App is Running...");
 
         Console.ReadLine();
 
-        return 0;
+        return Task.FromResult(0);
+        #endregion
     }
 }

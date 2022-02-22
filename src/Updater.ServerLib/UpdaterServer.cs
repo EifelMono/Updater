@@ -15,9 +15,11 @@ class UpdaterImpl : CoreLib.grpc.Updater.UpdaterBase
 
     public override Task<InventoryReply> SendInventory(InventoryRequest request, ServerCallContext context)
     {
-        Console.WriteLine();
-        foreach (var inventory in request.Packet)
-            Console.WriteLine($"{inventory.Path} {inventory.Type} {inventory.Version} {inventory.Serialnumber}");
+        Task.Run(() =>
+        {
+            UpdaterServer?._onInventory(request);
+        });
+     
         return Task.FromResult(new InventoryReply { });
     }
 }
@@ -82,6 +84,14 @@ public class UpdaterServer : IDisposable
     public UpdaterServer OnConfirmUpdate(Action action)
     {
         _onConfirmeUpdate = action;
+        return this;
+    }
+
+
+    internal Action<InventoryRequest> _onInventory { get; set; }
+    public UpdaterServer OnInventory(Action<InventoryRequest> action)
+    {
+        _onInventory = action;
         return this;
     }
 

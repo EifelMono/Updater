@@ -22,7 +22,7 @@ public class UdpServer : UdpCore, IDisposable
             {
                 var bytes = await _socket.ReceiveAsync(state.buffer, SocketFlags.None, cancellationTokenSource.Token);
                 var text = Encoding.ASCII.GetString(state.buffer, 0, bytes);
-                action?.Invoke(text);
+                _ = Task.Run(() => action?.Invoke(text));
             }
         }
         catch (Exception ex)

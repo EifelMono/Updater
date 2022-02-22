@@ -2,7 +2,13 @@
 AnsiConsole.Write(new FigletText(name).LeftAligned().Color(Color.Cyan1));
 
 
-using var updaterServer = new UpdaterServer();
+using var updaterServer = new UpdaterServer()
+    .OnInventory(request =>
+    {
+        Console.WriteLine();
+        foreach (var inventory in request.Packet)
+            Console.WriteLine($"{inventory.Path} {inventory.Type} {inventory.Version} {inventory.Serialnumber}");
+    });
 
 await updaterServer.BroadcastUpdaterAvailableAsync();
 
@@ -12,7 +18,7 @@ var selections = new Dictionary<string, Func<Task>>
 {
     ["Grpc reconnect"] = async () => await updaterServer.BroadcastGrpcReconnectAsync(),
     ["Updater available"] = async () => await updaterServer.BroadcastUpdaterAvailableAsync(),
-    ["Inventory"] = async () => await updaterServer.BroadcastInventoryAsync(TimeSpan.FromSeconds(2)),
+    ["Inventory"] = async () => await updaterServer.BroadcastInventoryAsync(TimeSpan.FromSeconds(1)),
     ["Update available"] = async () => await updaterServer.BroadcastUpdateAvailableAsync(),
     ["Confirme Update "] = async () => await updaterServer.BroadcastConfirmUpdateAsync(),
     ["Start Update"] = async () => await updaterServer.BroadcastStartUpdateAsync(),
